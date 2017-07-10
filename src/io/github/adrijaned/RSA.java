@@ -8,7 +8,8 @@ import java.util.Random;
  * RSA encryption handler
  */
 class RSA {
-    BigInteger d, e, n;
+    private BigInteger d;
+    BigInteger e, n;
     RSA() {
         BigInteger p, q, lambda;
         p = getRandomPrime();
@@ -24,7 +25,7 @@ class RSA {
         this.d = BigInteger.ONE;
     }
 
-    BigInteger findCoprime(BigInteger lambda) {
+    private BigInteger findCoprime(BigInteger lambda) {
         BigInteger d = new BigInteger("2");
         while (!lambda.gcd(d).equals(BigInteger.ONE)) {
             d = d.add(BigInteger.ONE);

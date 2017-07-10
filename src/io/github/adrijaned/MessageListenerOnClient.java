@@ -10,10 +10,8 @@ import java.net.Socket;
  * On client, listen to messages and print them
  */
 public class MessageListenerOnClient implements Runnable{
-    Socket socket;
-    BufferedReader bufferedReader;
+    private BufferedReader bufferedReader;
     MessageListenerOnClient(Socket socket)  {
-        this.socket = socket;
         try {
             bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         } catch (IOException e) {

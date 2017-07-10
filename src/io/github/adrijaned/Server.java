@@ -16,6 +16,7 @@ public class Server {
         try {
             ServerSocket serverSocket = new ServerSocket(25863);
             Set<MessageListenerOnServer> set = Collections.synchronizedSet(new HashSet<>());
+            //noinspection InfiniteLoopStatement - Will be stopped externally
             while (true) {
                 MessageListenerOnServer target = new MessageListenerOnServer(serverSocket.accept(), set, encryption);
                 set.add(target);
