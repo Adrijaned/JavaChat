@@ -12,11 +12,12 @@ import java.util.Set;
  */
 public class Server {
     public static void main(String[] args) throws IOException {
+        RSA encryption = new RSA();
         try {
             ServerSocket serverSocket = new ServerSocket(25863);
             Set<MessageListenerOnServer> set = Collections.synchronizedSet(new HashSet<>());
             while (true) {
-                MessageListenerOnServer target = new MessageListenerOnServer(serverSocket.accept(), set);
+                MessageListenerOnServer target = new MessageListenerOnServer(serverSocket.accept(), set, encryption);
                 set.add(target);
                 Thread t = new Thread(target);
                 t.setDaemon(true);

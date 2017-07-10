@@ -5,6 +5,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.math.BigInteger;
 import java.net.Socket;
 
 /**
@@ -22,12 +23,14 @@ public class Client {
         listener.setDaemon(true);
         listener.start();
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
+        RSA encryption = new RSA();
+        RSA serverEncryption = new RSA(new BigInteger(bufferedReader.readLine()), new BigInteger(bufferedReader.readLine()));
         while (true) {
             String s = bufferedReader.readLine();
             if (s.equals("")) {
                 break;
             }
-            printWriter.println(s);
+            printWriter.println(serverEncryption.encryptString(s));
             printWriter.flush();
         }
     }

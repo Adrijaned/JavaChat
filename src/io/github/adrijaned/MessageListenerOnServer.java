@@ -12,15 +12,21 @@ public class MessageListenerOnServer implements Runnable {
     private Set<MessageListenerOnServer> set;
     private BufferedReader reader;
     private PrintWriter writer;
+    private RSA encryption;
 
-    MessageListenerOnServer(Socket socket, Set<MessageListenerOnServer> set) {
+    MessageListenerOnServer(Socket socket, Set<MessageListenerOnServer> set, RSA encryption) {
         try {
             set.add(this);
+            this.encryption = encryption;
             this.set = set;
             reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
-        } catch (IOException e) {
-            e.printStackTrace();
+            // Send public key
+            writer.println(encryption.e);
+            writer.println(encryption.n);
+            writer.flush();
+        } catch (IOException ex) {
+            ex.printStackTrace();
         }
     }
 
@@ -35,7 +41,7 @@ public class MessageListenerOnServer implements Runnable {
                     break;
                 }
 
-                sendToOthers(s);
+                sendToOthers(encryption.decryptString(s));
             } catch (IOException e) {
                 e.printStackTrace();
                 break;
