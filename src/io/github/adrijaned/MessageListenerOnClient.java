@@ -25,7 +25,12 @@ public class MessageListenerOnClient implements Runnable{
     public void run() {
         while (true){
             try {
-                System.out.println(bufferedReader.readLine());
+                String line = bufferedReader.readLine();
+                if (line == null){
+                    System.out.println("Connection lost.");
+                    System.exit(0);
+                }
+                System.out.println(line);
             } catch (IOException e) {
                 break;
             }
