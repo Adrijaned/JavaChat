@@ -50,14 +50,16 @@ public class MessageListenerOnServer implements Runnable {
     }
 
     private void sendToOthers(String s) {
+        System.out.println(s);
         for (MessageListenerOnServer i : set) {
-            i.sendMessage(s);
+            if (i != this){
+                i.sendMessage(s);
+            }
         }
     }
 
     private void sendMessage(String s) {
         writer.println(s);
         writer.flush();
-        System.out.println(s);
     }
 }
