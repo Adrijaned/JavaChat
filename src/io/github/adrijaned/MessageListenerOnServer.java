@@ -1,6 +1,7 @@
 package io.github.adrijaned;
 
 import java.io.*;
+import java.math.BigInteger;
 import java.net.Socket;
 import java.util.Set;
 
@@ -12,7 +13,7 @@ public class MessageListenerOnServer implements Runnable {
     private Set<MessageListenerOnServer> set;
     private BufferedReader reader;
     private PrintWriter writer;
-    private RSA encryption;
+    private RSA encryption, clientEncryption;
 
     MessageListenerOnServer(Socket socket, Set<MessageListenerOnServer> set, RSA encryption) {
         try {
@@ -25,6 +26,7 @@ public class MessageListenerOnServer implements Runnable {
             writer.println(encryption.e);
             writer.println(encryption.n);
             writer.flush();
+            clientEncryption = new RSA(new BigInteger(reader.readLine()), new BigInteger(reader.readLine()));
         } catch (IOException ex) {
             ex.printStackTrace();
         }
@@ -59,7 +61,7 @@ public class MessageListenerOnServer implements Runnable {
     }
 
     private void sendMessage(String s) {
-        writer.println(s);
+        writer.println(clientEncryption.encryptString(s));
         writer.flush();
     }
 }

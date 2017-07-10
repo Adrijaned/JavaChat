@@ -11,8 +11,10 @@ import java.net.Socket;
  */
 public class MessageListenerToClient implements Runnable{
     private BufferedReader bufferedReader;
-    MessageListenerToClient(Socket socket)  {
+    RSA encryption;
+    MessageListenerToClient(Socket socket, RSA encryption)  {
         try {
+            this.encryption = encryption;
             bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         } catch (IOException e) {
             e.printStackTrace();
@@ -23,7 +25,7 @@ public class MessageListenerToClient implements Runnable{
     public void run() {
         while (true){
             try {
-                String line = bufferedReader.readLine();
+                String line = encryption.decryptString(bufferedReader.readLine());
                 if (line == null){
                     System.out.println("Connection lost.");
                     System.exit(0);
@@ -35,7 +37,7 @@ public class MessageListenerToClient implements Runnable{
         }
     }
 
-    String readMessage() {
+    String readRawMessage() {
         try {
             return bufferedReader.readLine();
         } catch (IOException e) {

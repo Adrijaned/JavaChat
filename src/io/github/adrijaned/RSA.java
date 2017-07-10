@@ -42,14 +42,23 @@ class RSA {
     }
 
     String encryptString(String message) {
+        if (message == null){
+            return null;
+        }
         return new BigInteger(message.getBytes()).modPow(e, n).toString();
     }
 
     private BigInteger decrypt(BigInteger message) {
+        if (message == null){
+            return null;
+        }
         return message.modPow(d, n);
     }
 
     String decryptString(String message) {
+        if (message == null){
+            return null;
+        }
         return new String(decrypt(new BigInteger(message)).toByteArray());
     }
 }
