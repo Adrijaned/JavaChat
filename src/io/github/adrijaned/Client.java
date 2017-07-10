@@ -16,15 +16,13 @@ public class Client {
     public static void main(String[] args) throws IOException {
         Socket socket = new Socket("localhost", 25863);
         PrintWriter printWriter = new PrintWriter(socket.getOutputStream());
-        printWriter.println("JOINED");
-        printWriter.flush();
-        Runnable runnable = new MessageListenerOnClient(socket);
-        Thread listener = new Thread(runnable);
+
+        MessageListenerToClient messageListener = new MessageListenerToClient(socket);
+        RSA serverEncryption = new RSA(new BigInteger(messageListener.readMessage()), new BigInteger(messageListener.readMessage()));
+        Thread listener = new Thread(messageListener);
         listener.setDaemon(true);
         listener.start();
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
-        RSA encryption = new RSA();
-        RSA serverEncryption = new RSA(new BigInteger(bufferedReader.readLine()), new BigInteger(bufferedReader.readLine()));
         while (true) {
             String s = bufferedReader.readLine();
             if (s.equals("")) {

@@ -9,9 +9,9 @@ import java.net.Socket;
  * Created by adrijaned on 9.7.17.
  * On client, listen to messages and print them
  */
-public class MessageListenerOnClient implements Runnable{
+public class MessageListenerToClient implements Runnable{
     private BufferedReader bufferedReader;
-    MessageListenerOnClient(Socket socket)  {
+    MessageListenerToClient(Socket socket)  {
         try {
             bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         } catch (IOException e) {
@@ -33,5 +33,14 @@ public class MessageListenerOnClient implements Runnable{
                 break;
             }
         }
+    }
+
+    String readMessage() {
+        try {
+            return bufferedReader.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }
