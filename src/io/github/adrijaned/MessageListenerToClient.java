@@ -11,7 +11,7 @@ import java.net.Socket;
  */
 public class MessageListenerToClient implements Runnable{
     private BufferedReader bufferedReader;
-    RSA encryption;
+    private RSA encryption;
     MessageListenerToClient(Socket socket, RSA encryption)  {
         try {
             this.encryption = encryption;
