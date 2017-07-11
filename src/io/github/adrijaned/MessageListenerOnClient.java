@@ -9,10 +9,11 @@ import java.net.Socket;
  * Created by adrijaned on 9.7.17.
  * On client, listen to messages and print them
  */
-public class MessageListenerOnClient implements Runnable{
+public class MessageListenerOnClient implements Runnable {
     private BufferedReader bufferedReader;
     private RSA encryption;
-    MessageListenerOnClient(Socket socket, RSA encryption)  {
+
+    MessageListenerOnClient(Socket socket, RSA encryption) {
         try {
             this.encryption = encryption;
             bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -21,12 +22,13 @@ public class MessageListenerOnClient implements Runnable{
             System.exit(1);
         }
     }
+
     @Override
     public void run() {
-        while (true){
+        while (true) {
             try {
                 String line = encryption.decryptString(bufferedReader.readLine());
-                if (line == null){
+                if (line == null) {
                     System.out.println("Connection lost.");
                     System.exit(0);
                 }

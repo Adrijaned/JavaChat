@@ -8,8 +8,9 @@ import java.util.Random;
  * RSA encryption handler
  */
 class RSA {
-    private BigInteger d;
     BigInteger e, n;
+    private BigInteger d;
+
     RSA() {
         BigInteger p, q, lambda;
         p = getRandomPrime();
@@ -19,7 +20,8 @@ class RSA {
         d = findCoprime(lambda);
         e = d.modInverse(lambda);
     }
-    RSA(BigInteger e, BigInteger n){
+
+    RSA(BigInteger e, BigInteger n) {
         this.e = e;
         this.n = n;
         this.d = BigInteger.ONE;
@@ -42,21 +44,21 @@ class RSA {
     }
 
     String encryptString(String message) {
-        if (message == null){
+        if (message == null) {
             return null;
         }
         return new BigInteger(message.getBytes()).modPow(e, n).toString();
     }
 
     private BigInteger decrypt(BigInteger message) {
-        if (message == null){
+        if (message == null) {
             return null;
         }
         return message.modPow(d, n);
     }
 
     String decryptString(String message) {
-        if (message == null){
+        if (message == null) {
             return null;
         }
         return new String(decrypt(new BigInteger(message)).toByteArray());
