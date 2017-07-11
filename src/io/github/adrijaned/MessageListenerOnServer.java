@@ -3,6 +3,7 @@ package io.github.adrijaned;
 import java.io.*;
 import java.math.BigInteger;
 import java.net.Socket;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -14,6 +15,8 @@ import java.util.regex.Pattern;
 
 public class MessageListenerOnServer implements Runnable {
     private static final Pattern MSG_PATTERN = Pattern.compile("^@ ?(\\w+) (.*)$");
+    private Pattern PASS_PATTERN = Pattern.compile("^(\\w+):(.*)$");
+    private static Map<String, String> logins = new HashMap<>();
     private Map<String, MessageListenerOnServer> mapOfClients;
     private BufferedReader reader;
     private PrintWriter writer;
@@ -22,6 +25,21 @@ public class MessageListenerOnServer implements Runnable {
 
     MessageListenerOnServer(Socket socket, Map<String, MessageListenerOnServer> mapOfClients, RSA serverEncryption) {
         try {
+            if (logins.isEmpty()) {
+                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream("serverFiles/USERS.TXT")));
+                while (true) {
+                    String temp = bufferedReader.readLine();
+                    if (temp == null) {
+                        break;
+                    }
+                    Matcher matcher = PASS_PATTERN.matcher(temp);
+                    if (!matcher.matches()) {
+                        throw new IOException();
+                    }
+                    logins.put(matcher.group(1), matcher.group(2));
+                }
+            }
+            System.out.println(logins.toString());
             this.serverEncryption = serverEncryption;
             this.mapOfClients = mapOfClients;
             reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -31,11 +49,25 @@ public class MessageListenerOnServer implements Runnable {
             writer.println(serverEncryption.n);
             writer.flush();
             clientEncryption = new RSA(new BigInteger(reader.readLine()), new BigInteger(reader.readLine()));
-            this.nickname = reader.readLine();
-            while (mapOfClients.containsKey(nickname) || !nickname.matches("^\\w+$")) {
-                writer.println("Error");
+            nickname = serverEncryption.decryptString(reader.readLine());
+            String pass = serverEncryption.decryptString(reader.readLine());
+            while (true) {
+                if (mapOfClients.containsKey(nickname)) {
+                    writer.println("User with the same name already connected.");
+                    writer.flush();
+                    nickname = serverEncryption.decryptString(reader.readLine());
+                    pass = serverEncryption.decryptString(reader.readLine());
+                    continue;
+                }
+                if (logins.containsKey(nickname)) {
+                    if (logins.get(nickname).equals(pass)) {
+                        break;
+                    }
+                }
+                writer.println("Invalid credentials.");
                 writer.flush();
-                this.nickname = reader.readLine();
+                nickname = serverEncryption.decryptString(reader.readLine());
+                pass = serverEncryption.decryptString(reader.readLine());
             }
             mapOfClients.put(nickname, this);
             writer.println("");

@@ -1,0 +1,4 @@
+kolo:olok
+kolo2:olok2
+kolo3:olok3
+kolo4:olok4

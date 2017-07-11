@@ -23,18 +23,32 @@ public class Client {
         printWriter.println(encryption.e);
         printWriter.println(encryption.n);
         printWriter.flush();
-        do {
-            System.out.print("Your new nickname: ");
-            printWriter.println(bufferedReader.readLine());
+        String rawMessage = "Please enter your credentials";
+        while (!rawMessage.equals("")) {
+            System.out.println(rawMessage);
+            System.out.print("Your nickname: ");
+            String nick = bufferedReader.readLine();
+            if (nick.equals("")) {
+                continue;
+            }
+            System.out.print("Your password: ");
+            String pass = bufferedReader.readLine();
+            if (pass.equals("")) {
+                System.out.println("Connected");
+                continue;
+            }
+            printWriter.println(serverEncryption.encryptString(nick));
+            printWriter.println(serverEncryption.encryptString(pass));
             printWriter.flush();
-        } while (!messageListener.readRawMessage().equals(""));
+            rawMessage = messageListener.readRawMessage();
+        }
         Thread listener = new Thread(messageListener);
         listener.setDaemon(true);
         listener.start();
         while (true) {
             String s = bufferedReader.readLine();
             if (s.equals("")) {
-                break;
+                continue;
             }
             printWriter.println(serverEncryption.encryptString(s));
             printWriter.flush();
