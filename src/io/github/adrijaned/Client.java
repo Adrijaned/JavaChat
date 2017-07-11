@@ -50,6 +50,9 @@ public class Client {
             if (s.equals("")) {
                 continue;
             }
+            if (s.toUpperCase().matches("[/:.\\\\]exit")) {
+                break;
+            }
             printWriter.println(serverEncryption.encryptString(s));
             printWriter.flush();
         }

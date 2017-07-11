@@ -15,9 +15,10 @@ public class Server {
         try {
             ServerSocket serverSocket = new ServerSocket(25863);
             Map<String, MessageListenerOnServer> clients = new ConcurrentHashMap<>();
+            Authentication userAuth = new Authentication("serverFiles/USERS.TXT");
             //noinspection InfiniteLoopStatement - Will be stopped externally
             while (true) {
-                MessageListenerOnServer target = new MessageListenerOnServer(serverSocket.accept(), clients, encryption);
+                MessageListenerOnServer target = new MessageListenerOnServer(serverSocket.accept(), clients, encryption, userAuth);
                 Thread t = new Thread(target);
                 t.setDaemon(true);
                 t.start();

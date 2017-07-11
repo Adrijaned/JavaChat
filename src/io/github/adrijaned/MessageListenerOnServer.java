@@ -3,7 +3,6 @@ package io.github.adrijaned;
 import java.io.*;
 import java.math.BigInteger;
 import java.net.Socket;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -15,31 +14,14 @@ import java.util.regex.Pattern;
 
 public class MessageListenerOnServer implements Runnable {
     private static final Pattern MSG_PATTERN = Pattern.compile("^@ ?(\\w+) (.*)$");
-    private Pattern PASS_PATTERN = Pattern.compile("^(\\w+):(.*)$");
-    private static Map<String, String> logins = new HashMap<>();
     private Map<String, MessageListenerOnServer> mapOfClients;
     private BufferedReader reader;
     private PrintWriter writer;
     private RSA serverEncryption, clientEncryption;
-    private String nickname;
+    private String username;
 
-    MessageListenerOnServer(Socket socket, Map<String, MessageListenerOnServer> mapOfClients, RSA serverEncryption) {
+    MessageListenerOnServer(Socket socket, Map<String, MessageListenerOnServer> mapOfClients, RSA serverEncryption, Authentication authenticator) {
         try {
-            if (logins.isEmpty()) {
-                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream("serverFiles/USERS.TXT")));
-                while (true) {
-                    String temp = bufferedReader.readLine();
-                    if (temp == null) {
-                        break;
-                    }
-                    Matcher matcher = PASS_PATTERN.matcher(temp);
-                    if (!matcher.matches()) {
-                        throw new IOException();
-                    }
-                    logins.put(matcher.group(1), matcher.group(2));
-                }
-            }
-            System.out.println(logins.toString());
             this.serverEncryption = serverEncryption;
             this.mapOfClients = mapOfClients;
             reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -49,27 +31,15 @@ public class MessageListenerOnServer implements Runnable {
             writer.println(serverEncryption.n);
             writer.flush();
             clientEncryption = new RSA(new BigInteger(reader.readLine()), new BigInteger(reader.readLine()));
-            nickname = serverEncryption.decryptString(reader.readLine());
+            username = serverEncryption.decryptString(reader.readLine());
             String pass = serverEncryption.decryptString(reader.readLine());
-            while (true) {
-                if (mapOfClients.containsKey(nickname)) {
-                    writer.println("User with the same name already connected.");
-                    writer.flush();
-                    nickname = serverEncryption.decryptString(reader.readLine());
-                    pass = serverEncryption.decryptString(reader.readLine());
-                    continue;
-                }
-                if (logins.containsKey(nickname)) {
-                    if (logins.get(nickname).equals(pass)) {
-                        break;
-                    }
-                }
-                writer.println("Invalid credentials.");
+            while (!authenticator.authenticateUser(username, pass) || mapOfClients.containsKey(username)) {
+                writer.println(mapOfClients.containsKey(username) ? "Username is already present on server" : "Invalid credentials");
                 writer.flush();
-                nickname = serverEncryption.decryptString(reader.readLine());
+                username = serverEncryption.decryptString(reader.readLine());
                 pass = serverEncryption.decryptString(reader.readLine());
             }
-            mapOfClients.put(nickname, this);
+            mapOfClients.put(username, this);
             writer.println("");
             writer.flush();
 
@@ -86,7 +56,7 @@ public class MessageListenerOnServer implements Runnable {
                 boolean isKeyword = false;
                 String s = reader.readLine();
                 if (s == null) {
-                    mapOfClients.remove(nickname);
+                    mapOfClients.remove(username);
                     break;
                 }
                 String message = serverEncryption.decryptString(s);
@@ -102,8 +72,8 @@ public class MessageListenerOnServer implements Runnable {
                     Matcher msgMatcher = MSG_PATTERN.matcher(message);
                     if (msgMatcher.matches()) {
                         isKeyword = true;
-                        System.out.println(nickname + " @ " + msgMatcher.group(1) + " :  " + msgMatcher.group(2));
-                        mapOfClients.get(msgMatcher.group(1)).sendMessage(nickname + " @ you" + " :  " + msgMatcher.group(2));
+                        System.out.println(username + " @ " + msgMatcher.group(1) + " :  " + msgMatcher.group(2));
+                        mapOfClients.get(msgMatcher.group(1)).sendMessage(username + " @ you" + " :  " + msgMatcher.group(2));
                     }
                 }
                 if (isKeyword) {
@@ -121,7 +91,7 @@ public class MessageListenerOnServer implements Runnable {
         System.out.println(s);
         for (MessageListenerOnServer i : mapOfClients.values()) {
             if (i != this) {
-                i.sendMessage(nickname + ": " + s);
+                i.sendMessage(username + ": " + s);
             }
         }
     }
