@@ -3,7 +3,9 @@ package io.github.adrijaned;
 import java.io.*;
 import java.math.BigInteger;
 import java.net.Socket;
-import java.util.Set;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by adrijaned on 9.7.17.
@@ -11,17 +13,17 @@ import java.util.Set;
  */
 
 public class MessageListenerOnServer implements Runnable {
-    private Set<MessageListenerOnServer> setOfClients;
+    private static final Pattern MSG_PATTERN = Pattern.compile("^@ ?(\\w+) (.*)$");
+    private Map<String, MessageListenerOnServer> mapOfClients;
     private BufferedReader reader;
     private PrintWriter writer;
     private RSA serverEncryption, clientEncryption;
     private String nickname;
 
-    MessageListenerOnServer(Socket socket, Set<MessageListenerOnServer> setOfClients, RSA serverEncryption) {
+    MessageListenerOnServer(Socket socket, Map<String, MessageListenerOnServer> mapOfClients, RSA serverEncryption) {
         try {
-            setOfClients.add(this);
             this.serverEncryption = serverEncryption;
-            this.setOfClients = setOfClients;
+            this.mapOfClients = mapOfClients;
             reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
             // Send public key
@@ -30,6 +32,15 @@ public class MessageListenerOnServer implements Runnable {
             writer.flush();
             clientEncryption = new RSA(new BigInteger(reader.readLine()), new BigInteger(reader.readLine()));
             this.nickname = reader.readLine();
+            while (mapOfClients.containsKey(nickname) || !nickname.matches("^\\w+$")) {
+                writer.println("Error");
+                writer.flush();
+                this.nickname = reader.readLine();
+            }
+            mapOfClients.put(nickname, this);
+            writer.println("");
+            writer.flush();
+
         } catch (IOException ex) {
             ex.printStackTrace();
         }
@@ -40,13 +51,33 @@ public class MessageListenerOnServer implements Runnable {
         //noinspection InfiniteLoopStatement - Is daemon
         while (true) {
             try {
+                boolean isKeyword = false;
                 String s = reader.readLine();
                 if (s == null) {
-                    setOfClients.remove(this);
+                    mapOfClients.remove(nickname);
                     break;
                 }
-
-                sendToOthers(serverEncryption.decryptString(s));
+                String message = serverEncryption.decryptString(s);
+                if (message.startsWith("/")) {
+                    switch (message.split(" ")[0].toUpperCase()) {
+                        case "/CLIENTS":
+                            sendMessage("List of connected users:");
+                            sendMessage(String.join("\n", mapOfClients.keySet()));
+                            isKeyword = true;
+                            break;
+                    }
+                } else {
+                    Matcher msgMatcher = MSG_PATTERN.matcher(message);
+                    if (msgMatcher.matches()) {
+                        isKeyword = true;
+                        System.out.println(nickname + " @ " + msgMatcher.group(1) + " :  " + msgMatcher.group(2));
+                        mapOfClients.get(msgMatcher.group(1)).sendMessage(nickname + " @ you" + " :  " + msgMatcher.group(2));
+                    }
+                }
+                if (isKeyword) {
+                    continue;
+                }
+                sendToOthers(message);
             } catch (IOException e) {
                 e.printStackTrace();
                 break;
@@ -56,7 +87,7 @@ public class MessageListenerOnServer implements Runnable {
 
     private void sendToOthers(String s) {
         System.out.println(s);
-        for (MessageListenerOnServer i : setOfClients) {
+        for (MessageListenerOnServer i : mapOfClients.values()) {
             if (i != this) {
                 i.sendMessage(nickname + ": " + s);
             }

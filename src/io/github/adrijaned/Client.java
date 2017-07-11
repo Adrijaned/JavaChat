@@ -18,18 +18,19 @@ public class Client {
         PrintWriter printWriter = new PrintWriter(socket.getOutputStream());
         RSA encryption = new RSA();
         MessageListenerOnClient messageListener = new MessageListenerOnClient(socket, encryption);
-        Thread listener = new Thread(messageListener);
-        listener.setDaemon(true);
         RSA serverEncryption = new RSA(new BigInteger(messageListener.readRawMessage()), new BigInteger(messageListener.readRawMessage()));
-        listener.start();
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
         printWriter.println(encryption.e);
         printWriter.println(encryption.n);
         printWriter.flush();
-
-        System.out.print("Your new nickname: ");
-        printWriter.println(bufferedReader.readLine());
-        printWriter.flush();
+        do {
+            System.out.print("Your new nickname: ");
+            printWriter.println(bufferedReader.readLine());
+            printWriter.flush();
+        } while (!messageListener.readRawMessage().equals(""));
+        Thread listener = new Thread(messageListener);
+        listener.setDaemon(true);
+        listener.start();
         while (true) {
             String s = bufferedReader.readLine();
             if (s.equals("")) {
