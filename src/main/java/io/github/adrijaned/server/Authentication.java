@@ -22,7 +22,7 @@ class Authentication {
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(passwordFile)));
             while (true) {
                 String temp = bufferedReader.readLine();
-                if (temp == null) {
+                if (temp == null || temp.equals("")) {
                     break;
                 }
                 Pattern PASS_PATTERN = Pattern.compile("^(\\w+):(.*)$");
