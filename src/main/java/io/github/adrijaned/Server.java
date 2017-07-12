@@ -12,10 +12,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Server {
     public static void main(String[] args) throws IOException {
         RSA encryption = new RSA();
+        String loginFiles = args[0];
+        int port = Integer.valueOf(args[1]);
         try {
-            ServerSocket serverSocket = new ServerSocket(25863);
+            ServerSocket serverSocket = new ServerSocket(port);
             Map<String, MessageListenerOnServer> clients = new ConcurrentHashMap<>();
-            Authentication userAuth = new Authentication("serverFiles/USERS.TXT");
+            Authentication userAuth = new Authentication(loginFiles);
             //noinspection InfiniteLoopStatement - Will be stopped externally
             while (true) {
                 MessageListenerOnServer target = new MessageListenerOnServer(serverSocket.accept(), clients, encryption, userAuth);

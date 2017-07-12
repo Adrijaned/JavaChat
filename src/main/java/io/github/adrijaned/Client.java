@@ -14,7 +14,9 @@ import java.net.Socket;
  */
 public class Client {
     public static void main(String[] args) throws IOException {
-        Socket socket = new Socket("localhost", 25863);
+        String host = args[0].matches("(^localhost$|^\\d\\d?\\d?\\.{3}\\d\\d?\\d?$)") ? args[0] : "localhost";
+        int port = Integer.valueOf(args[1].matches("\\d{4}\\d?") ? args[1] : "35863");
+        Socket socket = new Socket(host, port);
         PrintWriter printWriter = new PrintWriter(socket.getOutputStream());
         RSA encryption = new RSA();
         MessageListenerOnClient messageListener = new MessageListenerOnClient(socket, encryption);
@@ -55,10 +57,6 @@ public class Client {
             }
             System.out.print("Your password: ");
             String pass = bufferedReader.readLine();
-            if (pass.equals("")) {
-                System.out.println("Connected");
-                continue;
-            }
             printWriter.println(serverEncryption.encryptString(nick));
             printWriter.println(serverEncryption.encryptString(pass));
             printWriter.flush();
