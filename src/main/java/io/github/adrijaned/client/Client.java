@@ -1,6 +1,7 @@
 package io.github.adrijaned.client;
 
 
+import io.github.adrijaned.shared.LoginResponse;
 import io.github.adrijaned.shared.RSA;
 
 import java.io.BufferedReader;
@@ -49,9 +50,21 @@ public class Client {
     }
 
     private static void logIn(PrintWriter printWriter, MessageListenerOnClient messageListener, RSA serverEncryption, BufferedReader bufferedReader) throws IOException {
-        String rawMessage = "Please enter your credentials";
-        while (!rawMessage.equals("Logged in.")) {
-            System.out.println(rawMessage);
+        LoginResponse response = LoginResponse.AWAITING_LOGIN;
+        while (response != LoginResponse.LOGIN_ACCEPTED) {
+            switch (response) {
+                case AWAITING_LOGIN:
+                    System.out.println("Please enter your credentials");
+                    break;
+                case PASSWORD_INVALID:
+                    System.out.println("You have entered invalid password");
+                    break;
+                case USERNAME_ALREADY_PRESENT:
+                    System.out.println("Username is already present on server");
+                    break;
+                case USERNAME_INVALID:
+                    System.out.println("Your username contains disallowed characters");
+            }
             System.out.print("Your nickname: ");
             String nick = bufferedReader.readLine();
             if (nick.equals("")) {
@@ -62,7 +75,7 @@ public class Client {
             printWriter.println(serverEncryption.encryptString(nick));
             printWriter.println(serverEncryption.encryptString(pass));
             printWriter.flush();
-            rawMessage = messageListener.readRawMessage();
+            response = LoginResponse.valueOf(messageListener.readRawMessage());
         }
         System.out.println("Logged in");
     }

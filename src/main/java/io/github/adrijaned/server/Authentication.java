@@ -42,13 +42,10 @@ class Authentication {
     }
 
     boolean registerUser(String username, String password) {
-        if (logins.containsKey(username)) {
-            return false;
-        }
-        logins.put(username, password);
         if (!username.matches("\\w+")) {
             return false;
         }
+        logins.put(username, password);
         try {
             PrintWriter printWriter = new PrintWriter(new OutputStreamWriter(new FileOutputStream(passwordFile, true)));
             printWriter.println(username + ":" + Hashing.sha256().hashString(password, Charsets.UTF_8).toString());
@@ -57,5 +54,9 @@ class Authentication {
             e.printStackTrace();
         }
         return true;
+    }
+
+    boolean isRegistered(String username) {
+        return logins.containsKey(username);
     }
 }

@@ -1,5 +1,6 @@
 package io.github.adrijaned.server;
 
+import io.github.adrijaned.shared.LoginResponse;
 import io.github.adrijaned.shared.RSA;
 
 import java.io.*;
@@ -41,23 +42,30 @@ public class MessageListenerOnServer implements Runnable {
     }
 
     private String logUserIn(Map<String, MessageListenerOnServer> mapOfClients, RSA serverEncryption, Authentication authenticator) throws IOException {
-        String username = serverEncryption.decryptString(reader.readLine());
-        String pass = serverEncryption.decryptString(reader.readLine());
-        while (true) {
+        do {
+            String username = serverEncryption.decryptString(reader.readLine());
+            String pass = serverEncryption.decryptString(reader.readLine());
             if (mapOfClients.containsKey(username)) {
-                writer.println("Username is already present on server");
+                writer.println(LoginResponse.USERNAME_ALREADY_PRESENT.name());
                 writer.flush();
-            } else if (authenticator.authenticateUser(username, pass) || authenticator.registerUser(username, pass)) {
+            } else if (authenticator.isRegistered(username)) {
+                if (authenticator.authenticateUser(username, pass)) {
+                    this.username = username;
+                    break;
+                }
+                writer.println(LoginResponse.PASSWORD_INVALID.name());
+                writer.flush();
+            } else if (authenticator.registerUser(username, pass)) {
+                this.username = username;
                 break;
             } else {
-                writer.println("Invalid credentials.");
+                writer.println(LoginResponse.USERNAME_INVALID.name());
                 writer.flush();
             }
-            username = serverEncryption.decryptString(reader.readLine());
-            pass = serverEncryption.decryptString(reader.readLine());
-        }
+
+        } while (true);
         mapOfClients.put(username, this);
-        writer.println("Logged in.");
+        writer.println(LoginResponse.LOGIN_ACCEPTED.name());
         writer.flush();
         broadcast("User " + username + " logged in.");
         return username;
