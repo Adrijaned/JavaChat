@@ -38,7 +38,7 @@ public class Client {
             if (s.equals("")) {
                 continue;
             }
-            if (s.toUpperCase().matches("[/:.\\\\]exit")) {
+            if (s.toUpperCase().matches("[/:.\\\\]EXIT")) {
                 break;
             }
             printWriter.println(serverEncryption.encryptString(s));
@@ -62,5 +62,6 @@ public class Client {
             printWriter.flush();
             rawMessage = messageListener.readRawMessage();
         }
+        System.out.println("Logged in");
     }
 }

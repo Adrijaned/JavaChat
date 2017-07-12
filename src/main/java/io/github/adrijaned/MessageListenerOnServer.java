@@ -14,15 +14,16 @@ import java.util.regex.Pattern;
 
 public class MessageListenerOnServer implements Runnable {
     private static final Pattern MSG_PATTERN = Pattern.compile("^@ ?(\\w+) (.*)$");
-    private static final Pattern CMD_PATTERN = Pattern.compile("^[/:.\\\\] ?(\\w+) .*$");
     private Map<String, MessageListenerOnServer> mapOfClients;
     private BufferedReader reader;
     private PrintWriter writer;
     private RSA serverEncryption, clientEncryption;
     private String username;
+    private Authentication authenticator;
 
     MessageListenerOnServer(Socket socket, Map<String, MessageListenerOnServer> mapOfClients, RSA serverEncryption, Authentication authenticator) {
         try {
+            this.authenticator = authenticator;
             this.serverEncryption = serverEncryption;
             this.mapOfClients = mapOfClients;
             reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -32,8 +33,6 @@ public class MessageListenerOnServer implements Runnable {
             writer.println(serverEncryption.n);
             writer.flush();
             clientEncryption = new RSA(new BigInteger(reader.readLine()), new BigInteger(reader.readLine()));
-            username = logUserIn(mapOfClients, serverEncryption, authenticator);
-
         } catch (IOException ex) {
             ex.printStackTrace();
         }
@@ -51,28 +50,29 @@ public class MessageListenerOnServer implements Runnable {
         mapOfClients.put(username, this);
         writer.println("Logged in.");
         writer.flush();
+        broadcast("User " + username + " logged in.");
         return username;
     }
 
     @Override
     public void run() {
+        try {
+            username = logUserIn(mapOfClients, serverEncryption, authenticator);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         //noinspection InfiniteLoopStatement - Is daemon
         while (true) {
             try {
                 String s = reader.readLine();
                 if (s == null) {
-                    mapOfClients.remove(username);
+                    removeUser();
                     break;
                 }
                 String message = serverEncryption.decryptString(s);
-                Matcher matcher = CMD_PATTERN.matcher(message);
-                if (matcher.matches()) {
-                    switch (matcher.group(1).toUpperCase()) {
-                        case "CLIENTS":
-                            sendMessage("List of connected users:");
-                            sendMessage(String.join("\n", mapOfClients.keySet()));
-                            break;
-                    }
+                if (message.toUpperCase().startsWith("/CLIENTS")) {
+                    sendMessage("List of connected users:");
+                    sendMessage(String.join("\n", mapOfClients.keySet()));
                 } else {
                     Matcher msgMatcher = MSG_PATTERN.matcher(message);
                     if (msgMatcher.matches()) {
@@ -84,18 +84,29 @@ public class MessageListenerOnServer implements Runnable {
                 }
             } catch (IOException e) {
                 e.printStackTrace();
+                removeUser();
                 break;
             }
         }
     }
 
+    private void removeUser() {
+        broadcast("User " + username + " left.");
+        mapOfClients.remove(username);
+    }
+
     private void sendToOthers(String s) {
+        broadcast(username + " :  " + s);
+    }
+
+    private void broadcast(String s) {
         System.out.println(s);
         for (MessageListenerOnServer i : mapOfClients.values()) {
             if (i != this) {
-                i.sendMessage(username + ": " + s);
+                i.sendMessage(s);
             }
         }
+
     }
 
     private void sendMessage(String s) {
