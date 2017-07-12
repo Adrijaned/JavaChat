@@ -23,4 +23,6 @@ hs_err_pid*
 
 out/
 .idea/
-*.iml
+/Chat.iml
+src/main/assembly/
+target/
