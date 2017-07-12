@@ -1,9 +1,9 @@
 package io.github.adrijaned;
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import com.google.common.base.Charsets;
+import com.google.common.hash.Hashing;
+
+import java.io.*;
 import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -14,9 +14,11 @@ import java.util.regex.Pattern;
  */
 class Authentication {
     private HashMap<String, String> logins = new HashMap<>();
+    private String passwordFile;
 
     Authentication(String passwordFile) {
         try {
+            this.passwordFile = passwordFile;
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(passwordFile)));
             while (true) {
                 String temp = bufferedReader.readLine();
@@ -36,6 +38,24 @@ class Authentication {
     }
 
     boolean authenticateUser(String username, String password) {
-        return password.equals(logins.get(username));
+        return Hashing.sha256().hashString(password, Charsets.UTF_8).toString().equals(logins.get(username));
+    }
+
+    boolean registerUser(String username, String password) {
+        if (logins.containsKey(username)) {
+            return false;
+        }
+        logins.put(username, password);
+        if (!username.matches("\\w+")) {
+            return false;
+        }
+        try {
+            PrintWriter printWriter = new PrintWriter(new OutputStreamWriter(new FileOutputStream(passwordFile, true)));
+            printWriter.println(username + ":" + Hashing.sha256().hashString(password, Charsets.UTF_8).toString());
+            printWriter.flush();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        return true;
     }
 }

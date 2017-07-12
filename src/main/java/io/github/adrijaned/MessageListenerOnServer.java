@@ -1,8 +1,5 @@
 package io.github.adrijaned;
 
-import com.google.common.base.Charsets;
-import com.google.common.hash.Hashing;
-
 import java.io.*;
 import java.math.BigInteger;
 import java.net.Socket;
@@ -43,14 +40,19 @@ public class MessageListenerOnServer implements Runnable {
 
     private String logUserIn(Map<String, MessageListenerOnServer> mapOfClients, RSA serverEncryption, Authentication authenticator) throws IOException {
         String username = serverEncryption.decryptString(reader.readLine());
-        String pass = Hashing.sha256().hashString(serverEncryption.decryptString(reader.readLine()), Charsets.UTF_8).toString();
-        System.out.println(pass);
-        while (!authenticator.authenticateUser(username, pass) || mapOfClients.containsKey(username)) {
-            writer.println(mapOfClients.containsKey(username) ? "Username is already present on server" : "Invalid credentials");
-            writer.flush();
+        String pass = reader.readLine();
+        while (true) {
+            if (mapOfClients.containsKey(username)) {
+                writer.println("Username is already present on server");
+                writer.flush();
+            } else if (authenticator.authenticateUser(username, pass) || authenticator.registerUser(username, pass)) {
+                break;
+            } else {
+                writer.println("Invalid credentials.");
+                writer.flush();
+            }
             username = serverEncryption.decryptString(reader.readLine());
-            pass = Hashing.sha256().hashString(serverEncryption.decryptString(reader.readLine()), Charsets.UTF_8).toString();
-            System.out.println(pass);
+            pass = serverEncryption.decryptString(reader.readLine());
         }
         mapOfClients.put(username, this);
         writer.println("Logged in.");
