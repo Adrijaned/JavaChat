@@ -1,4 +1,6 @@
-package io.github.adrijaned;
+package io.github.adrijaned.server;
+
+import io.github.adrijaned.shared.RSA;
 
 import java.io.IOException;
 import java.net.ServerSocket;

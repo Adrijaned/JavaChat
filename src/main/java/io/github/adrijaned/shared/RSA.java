@@ -1,4 +1,4 @@
-package io.github.adrijaned;
+package io.github.adrijaned.shared;
 
 import java.math.BigInteger;
 import java.util.Random;
@@ -7,11 +7,11 @@ import java.util.Random;
  * Created by adrijaned on 10.7.17.
  * RSA encryption handler
  */
-class RSA {
-    BigInteger e, n;
+public class RSA {
+    public BigInteger e, n;
     private BigInteger d;
 
-    RSA() {
+    public RSA() {
         BigInteger p, q, lambda;
         p = getRandomPrime();
         q = getRandomPrime();
@@ -21,7 +21,7 @@ class RSA {
         e = d.modInverse(lambda);
     }
 
-    RSA(BigInteger e, BigInteger n) {
+    public RSA(BigInteger e, BigInteger n) {
         this.e = e;
         this.n = n;
         this.d = BigInteger.ONE;
@@ -43,7 +43,7 @@ class RSA {
         return a.multiply(b).divide(a.gcd(b));
     }
 
-    String encryptString(String message) {
+    public String encryptString(String message) {
         if (message == null) {
             return null;
         }
@@ -57,7 +57,7 @@ class RSA {
         return message.modPow(d, n);
     }
 
-    String decryptString(String message) {
+    public String decryptString(String message) {
         if (message == null) {
             return null;
         }

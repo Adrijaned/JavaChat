@@ -1,5 +1,7 @@
-package io.github.adrijaned;
+package io.github.adrijaned.client;
 
+
+import io.github.adrijaned.shared.RSA;
 
 import java.io.BufferedReader;
 import java.io.IOException;

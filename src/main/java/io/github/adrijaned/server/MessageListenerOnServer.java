@@ -1,4 +1,6 @@
-package io.github.adrijaned;
+package io.github.adrijaned.server;
+
+import io.github.adrijaned.shared.RSA;
 
 import java.io.*;
 import java.math.BigInteger;
@@ -40,7 +42,7 @@ public class MessageListenerOnServer implements Runnable {
 
     private String logUserIn(Map<String, MessageListenerOnServer> mapOfClients, RSA serverEncryption, Authentication authenticator) throws IOException {
         String username = serverEncryption.decryptString(reader.readLine());
-        String pass = reader.readLine();
+        String pass = serverEncryption.decryptString(reader.readLine());
         while (true) {
             if (mapOfClients.containsKey(username)) {
                 writer.println("Username is already present on server");

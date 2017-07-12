@@ -1,4 +1,4 @@
-package io.github.adrijaned;
+package io.github.adrijaned.server;
 
 import com.google.common.base.Charsets;
 import com.google.common.hash.Hashing;

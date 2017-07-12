@@ -38,7 +38,7 @@
                             </descriptors>
                             <archive>
                                 <manifest>
-                                    <mainClass>io.github.adrijaned.Server</mainClass>
+                                    <mainClass>io.github.adrijaned.server.Server</mainClass>
                                 </manifest>
                             </archive>
                             <finalName>server</finalName>
@@ -57,7 +57,7 @@
                             </descriptors>
                             <archive>
                                 <manifest>
-                                    <mainClass>io.github.adrijaned.Client</mainClass>
+                                    <mainClass>io.github.adrijaned.client.Client</mainClass>
                                 </manifest>
                             </archive>
                             <finalName>client</finalName>
