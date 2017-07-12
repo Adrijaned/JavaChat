@@ -23,8 +23,30 @@ public class Client {
         printWriter.println(encryption.e);
         printWriter.println(encryption.n);
         printWriter.flush();
+        logIn(printWriter, messageListener, serverEncryption, bufferedReader);
+        Thread listener = new Thread(messageListener);
+        listener.setDaemon(true);
+        listener.start();
+        userInputHandler(printWriter, serverEncryption, bufferedReader);
+    }
+
+    private static void userInputHandler(PrintWriter printWriter, RSA serverEncryption, BufferedReader bufferedReader) throws IOException {
+        while (true) {
+            String s = bufferedReader.readLine();
+            if (s.equals("")) {
+                continue;
+            }
+            if (s.toUpperCase().matches("[/:.\\\\]exit")) {
+                break;
+            }
+            printWriter.println(serverEncryption.encryptString(s));
+            printWriter.flush();
+        }
+    }
+
+    private static void logIn(PrintWriter printWriter, MessageListenerOnClient messageListener, RSA serverEncryption, BufferedReader bufferedReader) throws IOException {
         String rawMessage = "Please enter your credentials";
-        while (!rawMessage.equals("")) {
+        while (!rawMessage.equals("Logged in.")) {
             System.out.println(rawMessage);
             System.out.print("Your nickname: ");
             String nick = bufferedReader.readLine();
@@ -41,20 +63,6 @@ public class Client {
             printWriter.println(serverEncryption.encryptString(pass));
             printWriter.flush();
             rawMessage = messageListener.readRawMessage();
-        }
-        Thread listener = new Thread(messageListener);
-        listener.setDaemon(true);
-        listener.start();
-        while (true) {
-            String s = bufferedReader.readLine();
-            if (s.equals("")) {
-                continue;
-            }
-            if (s.toUpperCase().matches("[/:.\\\\]exit")) {
-                break;
-            }
-            printWriter.println(serverEncryption.encryptString(s));
-            printWriter.flush();
         }
     }
 }
