@@ -90,6 +90,15 @@ public class MessageListenerOnServer implements Runnable {
                 if (message.toUpperCase().startsWith("/CLIENTS")) {
                     sendMessage("List of connected users:");
                     sendMessage(String.join("\n", mapOfClients.keySet()));
+                } else if (message.toUpperCase().startsWith("/CHPASS")) {
+                    String pass;
+                    try {
+                        pass = message.split(" ")[1];
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                        continue;
+                    }
+                    authenticator.changePassword(username, pass);
+                    sendMessage("Password changed");
                 } else {
                     Matcher msgMatcher = MSG_PATTERN.matcher(message);
                     if (msgMatcher.matches()) {

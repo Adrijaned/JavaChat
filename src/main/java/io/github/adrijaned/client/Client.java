@@ -41,6 +41,10 @@ public class Client {
             if (s.toUpperCase().matches("[/:.\\\\]EXIT")) {
                 break;
             }
+            if (s.toUpperCase().startsWith("/CHPASS")) {
+                System.out.print("Your new password: ");
+                s = "/CHPASS " + userReader.readPass();
+            }
             printWriter.println(serverEncryption.encryptString(s));
             printWriter.flush();
         }

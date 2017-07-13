@@ -7,10 +7,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
 
-/**
- * Created by adrijaned on 9.7.17.
- * On client, listen to messages and print them
- */
 public class MessageListenerOnClient implements Runnable {
     private BufferedReader bufferedReader;
     private RSA encryption;

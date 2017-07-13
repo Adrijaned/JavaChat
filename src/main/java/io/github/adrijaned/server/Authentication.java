@@ -17,8 +17,50 @@ class Authentication {
     private String passwordFile;
 
     Authentication(String passwordFile) {
+        this.passwordFile = passwordFile;
+        loadLogins();
+    }
+
+    boolean authenticateUser(String username, String password) {
+        return hashString(password).equals(logins.get(username));
+    }
+
+    boolean registerUser(String username, String password) {
+        if (!username.matches("\\w+")) {
+            return false;
+        }
+        logins.put(username, password);
         try {
-            this.passwordFile = passwordFile;
+            PrintWriter printWriter = new PrintWriter(new OutputStreamWriter(new FileOutputStream(passwordFile, true)));
+            printWriter.println(username + ":" + hashString(password));
+            printWriter.flush();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        return true;
+    }
+
+    boolean isRegistered(String username) {
+        return logins.containsKey(username);
+    }
+
+    void changePassword(String username, String newPassword) {
+        logins.replace(username, newPassword);
+        try {
+            PrintWriter printWriter = new PrintWriter(new FileOutputStream(passwordFile));
+            for (String name : logins.keySet()) {
+                printWriter.println(name + ":" + hashString(logins.get(name)));
+            }
+            printWriter.flush();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        loadLogins();
+    }
+
+    private void loadLogins() {
+        try {
+            logins = new HashMap<>();
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(passwordFile)));
             while (true) {
                 String temp = bufferedReader.readLine();
@@ -37,26 +79,7 @@ class Authentication {
         }
     }
 
-    boolean authenticateUser(String username, String password) {
-        return Hashing.sha256().hashString(password, Charsets.UTF_8).toString().equals(logins.get(username));
-    }
-
-    boolean registerUser(String username, String password) {
-        if (!username.matches("\\w+")) {
-            return false;
-        }
-        logins.put(username, password);
-        try {
-            PrintWriter printWriter = new PrintWriter(new OutputStreamWriter(new FileOutputStream(passwordFile, true)));
-            printWriter.println(username + ":" + Hashing.sha256().hashString(password, Charsets.UTF_8).toString());
-            printWriter.flush();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        return true;
-    }
-
-    boolean isRegistered(String username) {
-        return logins.containsKey(username);
+    private String hashString(String string) {
+        return Hashing.sha256().hashString(string, Charsets.UTF_8).toString();
     }
 }

@@ -3,6 +3,8 @@ package io.github.adrijaned.server;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.File;
+
 public class AuthenticationTest {
     @Test
     public void testIsRegistered() throws Exception {
@@ -30,9 +32,12 @@ public class AuthenticationTest {
 
     @Test
     public void testRegistration() throws Exception {
-        Authentication authentication = new Authentication("src/test/java/userAuth.txt");
-        Assert.assertFalse(authentication.isRegistered("regex"));
+        File tempTestFile = File.createTempFile("userAuth", "txt");
+        tempTestFile.deleteOnExit();
+        Authentication authentication = new Authentication(tempTestFile.getAbsolutePath());
+        authentication.registerUser("re", "re");
+        Assert.assertFalse(authentication.authenticateUser("regex", "regexOne"));
         Assert.assertTrue(authentication.registerUser("regex", "regexOne"));
-        Assert.assertTrue(authentication.isRegistered("regex"));
+        Assert.assertTrue(authentication.authenticateUser("regex", "regexOne"));
     }
 }
