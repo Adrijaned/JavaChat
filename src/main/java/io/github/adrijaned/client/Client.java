@@ -1,9 +1,7 @@
 package io.github.adrijaned.client;
 
 
-import io.github.adrijaned.shared.ConsoleUtil;
-import io.github.adrijaned.shared.LoginResponse;
-import io.github.adrijaned.shared.RSA;
+import io.github.adrijaned.shared.*;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -23,20 +21,20 @@ public class Client {
         RSA encryption = new RSA();
         MessageListenerOnClient messageListener = new MessageListenerOnClient(socket, encryption);
         RSA serverEncryption = new RSA(new BigInteger(messageListener.readRawMessage()), new BigInteger(messageListener.readRawMessage()));
-        ConsoleUtil console = new ConsoleUtil();
+        UserReader userReader = System.console() == null ? new SystemInUserReader() : new ConsoleUserReader();
         printWriter.println(encryption.e);
         printWriter.println(encryption.n);
         printWriter.flush();
-        logIn(printWriter, messageListener, serverEncryption, console);
+        logIn(printWriter, messageListener, serverEncryption, userReader);
         Thread listener = new Thread(messageListener);
         listener.setDaemon(true);
         listener.start();
-        userInputHandler(printWriter, serverEncryption, console);
+        userInputHandler(printWriter, serverEncryption, userReader);
     }
 
-    private static void userInputHandler(PrintWriter printWriter, RSA serverEncryption, ConsoleUtil bufferedReader) throws IOException {
+    private static void userInputHandler(PrintWriter printWriter, RSA serverEncryption, UserReader userReader) throws IOException {
         while (true) {
-            String s = bufferedReader.readLine();
+            String s = userReader.readLine();
             if (s.equals("")) {
                 continue;
             }
@@ -48,7 +46,7 @@ public class Client {
         }
     }
 
-    private static void logIn(PrintWriter printWriter, MessageListenerOnClient messageListener, RSA serverEncryption, ConsoleUtil consoleUtil) throws IOException {
+    private static void logIn(PrintWriter printWriter, MessageListenerOnClient messageListener, RSA serverEncryption, UserReader userReader) throws IOException {
         LoginResponse response = LoginResponse.AWAITING_LOGIN;
         while (response != LoginResponse.LOGIN_ACCEPTED) {
             switch (response) {
@@ -65,12 +63,12 @@ public class Client {
                     System.out.println("Your username contains disallowed characters");
             }
             System.out.print("Your nickname: ");
-            String nick = consoleUtil.readLine();
+            String nick = userReader.readLine();
             if (nick.equals("")) {
                 continue;
             }
             System.out.print("Your password: ");
-            String pass = consoleUtil.readPass();
+            String pass = userReader.readPass();
             printWriter.println(serverEncryption.encryptString(nick));
             printWriter.println(serverEncryption.encryptString(pass));
             printWriter.flush();
