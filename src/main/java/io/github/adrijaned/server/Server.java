@@ -20,6 +20,10 @@ public class Server {
             ServerSocket serverSocket = new ServerSocket(port);
             Map<String, MessageListenerOnServer> clients = new ConcurrentHashMap<>();
             Authentication userAuth = new Authentication(loginFiles);
+            ServerConsole serverConsole = new ServerConsole(clients);
+            Thread thread = new Thread(serverConsole);
+            thread.setDaemon(true);
+            thread.start();
             //noinspection InfiniteLoopStatement - Will be stopped externally
             while (true) {
                 MessageListenerOnServer target = new MessageListenerOnServer(serverSocket.accept(), clients, encryption, userAuth);

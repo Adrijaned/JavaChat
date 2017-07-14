@@ -17,46 +17,44 @@ import java.util.regex.Pattern;
 
 public class MessageListenerOnServer implements Runnable {
     private static final Pattern MSG_PATTERN = Pattern.compile("^@ ?(\\w+) (.*)$");
-    private Map<String, MessageListenerOnServer> mapOfClients;
-    private BufferedReader reader;
-    private PrintWriter writer;
-    private RSA serverEncryption, clientEncryption;
-    private String username;
-    private Authentication authenticator;
+    private final Map<String, MessageListenerOnServer> mapOfClients;
+    private final BufferedReader reader;
+    private final PrintWriter writer;
+    private final RSA serverEncryption, clientEncryption;
+    private final String username;
+    private final Authentication authenticator;
+    private final Socket socket;
 
-    MessageListenerOnServer(Socket socket, Map<String, MessageListenerOnServer> mapOfClients, RSA serverEncryption, Authentication authenticator) {
-        try {
-            this.authenticator = authenticator;
-            this.serverEncryption = serverEncryption;
-            this.mapOfClients = mapOfClients;
-            reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
-            // Send public key
-            writer.println(serverEncryption.e);
-            writer.println(serverEncryption.n);
-            writer.flush();
-            clientEncryption = new RSA(new BigInteger(reader.readLine()), new BigInteger(reader.readLine()));
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
+    MessageListenerOnServer(Socket socket, Map<String, MessageListenerOnServer> mapOfClients, RSA serverEncryption, Authentication authenticator) throws IOException {
+        this.socket = socket;
+        this.authenticator = authenticator;
+        this.serverEncryption = serverEncryption;
+        this.mapOfClients = mapOfClients;
+        reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
+        // Send public key
+        writer.println(serverEncryption.e);
+        writer.println(serverEncryption.n);
+        writer.flush();
+        clientEncryption = new RSA(new BigInteger(reader.readLine()), new BigInteger(reader.readLine()));
+        username = logUserIn();
     }
 
-    private String logUserIn(Map<String, MessageListenerOnServer> mapOfClients, RSA serverEncryption, Authentication authenticator) throws IOException {
+    private String logUserIn() throws IOException {
+        String username;
         do {
-            String username = serverEncryption.decryptString(reader.readLine());
+            username = serverEncryption.decryptString(reader.readLine());
             String pass = serverEncryption.decryptString(reader.readLine());
             if (mapOfClients.containsKey(username)) {
                 writer.println(LoginResponse.USERNAME_ALREADY_PRESENT.name());
                 writer.flush();
             } else if (authenticator.isRegistered(username)) {
                 if (authenticator.authenticateUser(username, pass)) {
-                    this.username = username;
                     break;
                 }
                 writer.println(LoginResponse.PASSWORD_INVALID.name());
                 writer.flush();
             } else if (authenticator.registerUser(username, pass)) {
-                this.username = username;
                 break;
             } else {
                 writer.println(LoginResponse.USERNAME_INVALID.name());
@@ -73,12 +71,6 @@ public class MessageListenerOnServer implements Runnable {
 
     @Override
     public void run() {
-        try {
-            username = logUserIn(mapOfClients, serverEncryption, authenticator);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        //noinspection InfiniteLoopStatement - Is daemon
         while (true) {
             try {
                 String s = reader.readLine();
@@ -92,9 +84,10 @@ public class MessageListenerOnServer implements Runnable {
                     sendMessage(String.join("\n", mapOfClients.keySet()));
                 } else if (message.toUpperCase().startsWith("/CHPASS")) {
                     String pass;
-                    try {
-                        pass = message.split(" ")[1];
-                    } catch (ArrayIndexOutOfBoundsException e) {
+                    String[] chPassString = message.split(" ");
+                    if (chPassString.length > 1) {
+                        pass = chPassString[1];
+                    } else {
                         continue;
                     }
                     authenticator.changePassword(username, pass);
@@ -109,7 +102,6 @@ public class MessageListenerOnServer implements Runnable {
                     }
                 }
             } catch (IOException e) {
-                e.printStackTrace();
                 removeUser();
                 break;
             }
@@ -119,6 +111,17 @@ public class MessageListenerOnServer implements Runnable {
     private void removeUser() {
         broadcast("User " + username + " left.");
         mapOfClients.remove(username);
+    }
+
+    void kickUser() {
+        broadcast("User " + username + " was kicked.");
+        sendMessage("You were kicked.");
+        mapOfClients.remove(username);
+        try {
+            this.socket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void sendToOthers(String s) {
@@ -135,7 +138,7 @@ public class MessageListenerOnServer implements Runnable {
 
     }
 
-    private void sendMessage(String s) {
+    void sendMessage(String s) {
         writer.println(clientEncryption.encryptString(s));
         writer.flush();
     }
