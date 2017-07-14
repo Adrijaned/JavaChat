@@ -40,4 +40,16 @@ public class AuthenticationTest {
         Assert.assertTrue(authentication.registerUser("regex", "regexOne"));
         Assert.assertTrue(authentication.authenticateUser("regex", "regexOne"));
     }
+
+    @Test
+    public void testChangePassword() throws Exception {
+        File tempTestFile = File.createTempFile("userAuth", "txt");
+        tempTestFile.deleteOnExit();
+        Authentication authentication = new Authentication(tempTestFile.getAbsolutePath());
+        authentication.registerUser("test", "test");
+        Assert.assertTrue(authentication.authenticateUser("test", "test"));
+        authentication.changePassword("test", "tester");
+        Assert.assertFalse(authentication.authenticateUser("test", "test"));
+        Assert.assertTrue(authentication.authenticateUser("test", "tester"));
+    }
 }

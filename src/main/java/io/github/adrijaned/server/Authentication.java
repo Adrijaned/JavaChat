@@ -13,8 +13,8 @@ import java.util.regex.Pattern;
  * Handles user authentication
  */
 class Authentication {
-    private HashMap<String, String> logins = new HashMap<>();
-    private String passwordFile;
+    private final HashMap<String, CredentialsHolder> logins = new HashMap<>();
+    private final String passwordFile;
 
     Authentication(String passwordFile) {
         this.passwordFile = passwordFile;
@@ -22,17 +22,17 @@ class Authentication {
     }
 
     boolean authenticateUser(String username, String password) {
-        return hashString(password).equals(logins.get(username));
+        return isRegistered(username) && hashString(logins.get(username).getSalt() + password).equals(logins.get(username).getHash());
     }
 
     boolean registerUser(String username, String password) {
         if (!username.matches("\\w+")) {
             return false;
         }
-        logins.put(username, password);
+        logins.put(username, new CredentialsHolder(password));
         try {
             PrintWriter printWriter = new PrintWriter(new OutputStreamWriter(new FileOutputStream(passwordFile, true)));
-            printWriter.println(username + ":" + hashString(password));
+            printWriter.println(username + ":" + logins.get(username).getSalt() + ":" + logins.get(username).getHash());
             printWriter.flush();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -45,34 +45,32 @@ class Authentication {
     }
 
     void changePassword(String username, String newPassword) {
-        logins.replace(username, newPassword);
+        logins.replace(username, new CredentialsHolder(newPassword));
         try {
             PrintWriter printWriter = new PrintWriter(new FileOutputStream(passwordFile));
             for (String name : logins.keySet()) {
-                printWriter.println(name + ":" + hashString(logins.get(name)));
+                printWriter.println(name + ":" + logins.get(name).getSalt() + ":" + logins.get(name).getHash());
             }
             printWriter.flush();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
-        loadLogins();
     }
 
     private void loadLogins() {
         try {
-            logins = new HashMap<>();
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(passwordFile)));
             while (true) {
                 String temp = bufferedReader.readLine();
                 if (temp == null || temp.equals("")) {
                     break;
                 }
-                Pattern PASS_PATTERN = Pattern.compile("^(\\w+):(.*)$");
+                Pattern PASS_PATTERN = Pattern.compile("^(\\w+):(\\d+):(.*)$");
                 Matcher matcher = PASS_PATTERN.matcher(temp);
                 if (!matcher.matches()) {
                     throw new IOException();
                 }
-                logins.put(matcher.group(1), matcher.group(2));
+                logins.put(matcher.group(1), new CredentialsHolder(matcher.group(2), matcher.group(3)));
             }
         } catch (IOException e) {
             e.printStackTrace();
