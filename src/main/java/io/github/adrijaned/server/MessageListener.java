@@ -15,9 +15,9 @@ import java.util.regex.Pattern;
  * On server, listen on client's socket and forward all incoming messages to server.
  */
 
-public class MessageListenerOnServer implements Runnable {
+class MessageListener {
     private static final Pattern MSG_PATTERN = Pattern.compile("^@ ?(\\w+) (.*)$");
-    private final Map<String, MessageListenerOnServer> mapOfClients;
+    private final Map<String, MessageListener> mapOfClients;
     private final BufferedReader reader;
     private final PrintWriter writer;
     private final RSA serverEncryption, clientEncryption;
@@ -25,7 +25,7 @@ public class MessageListenerOnServer implements Runnable {
     private final Authentication authenticator;
     private final Socket socket;
 
-    MessageListenerOnServer(Socket socket, Map<String, MessageListenerOnServer> mapOfClients, RSA serverEncryption, Authentication authenticator) throws IOException {
+    MessageListener(Socket socket, Map<String, MessageListener> mapOfClients, RSA serverEncryption, Authentication authenticator) throws IOException {
         this.socket = socket;
         this.authenticator = authenticator;
         this.serverEncryption = serverEncryption;
@@ -69,8 +69,7 @@ public class MessageListenerOnServer implements Runnable {
         return username;
     }
 
-    @Override
-    public void run() {
+    void listen() {
         while (true) {
             try {
                 String s = reader.readLine();
@@ -130,7 +129,7 @@ public class MessageListenerOnServer implements Runnable {
 
     private void broadcast(String s) {
         System.out.println(s);
-        for (MessageListenerOnServer i : mapOfClients.values()) {
+        for (MessageListener i : mapOfClients.values()) {
             if (i != this) {
                 i.sendMessage(s);
             }

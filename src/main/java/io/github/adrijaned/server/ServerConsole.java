@@ -8,9 +8,9 @@ import java.io.IOException;
 import java.util.Map;
 
 public class ServerConsole implements Runnable {
-    private Map<String, MessageListenerOnServer> clients;
+    private Map<String, MessageListener> clients;
 
-    ServerConsole(Map<String, MessageListenerOnServer> map) {
+    ServerConsole(Map<String, MessageListener> map) {
         clients = map;
     }
 
@@ -42,7 +42,7 @@ public class ServerConsole implements Runnable {
     }
 
     private void broadcastMessage(String line) {
-        for (MessageListenerOnServer client : clients.values()) {
+        for (MessageListener client : clients.values()) {
             client.sendMessage(line);
         }
     }

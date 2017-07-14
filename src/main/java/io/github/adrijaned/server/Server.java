@@ -4,6 +4,7 @@ import io.github.adrijaned.shared.RSA;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -18,7 +19,7 @@ public class Server {
         int port = Integer.valueOf(args[1]);
         try {
             ServerSocket serverSocket = new ServerSocket(port);
-            Map<String, MessageListenerOnServer> clients = new ConcurrentHashMap<>();
+            Map<String, MessageListener> clients = new ConcurrentHashMap<>();
             Authentication userAuth = new Authentication(loginFiles);
             ServerConsole serverConsole = new ServerConsole(clients);
             Thread thread = new Thread(serverConsole);
@@ -26,8 +27,8 @@ public class Server {
             thread.start();
             //noinspection InfiniteLoopStatement - Will be stopped externally
             while (true) {
-                MessageListenerOnServer target = new MessageListenerOnServer(serverSocket.accept(), clients, encryption, userAuth);
-                Thread t = new Thread(target);
+                Socket socket = serverSocket.accept();
+                Thread t = new Thread(new ConversationRunnable(socket, clients, encryption, userAuth));
                 t.setDaemon(true);
                 t.start();
             }
